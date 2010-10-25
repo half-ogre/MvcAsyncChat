@@ -1,0 +1,110 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>room.js Spec</title>
+    <script type="text/javascript" src="../WebApp/Scripts/jquery-1.4.1.min.js"></script>
+    <script type="text/javascript" src="qunit.js"></script>
+    <script type="text/javascript" src="jquery.stubs.js"></script>
+    <script type="text/javascript" src="stubs.js"></script>
+    <script type = "text/javascript" src="../WebApp/Scripts/room.js"></script>
+    <link rel="stylesheet" href="qunit.css" type="text/css" />
+    <script>
+        var lifecycle = {
+            teardown: function () {
+                $.stubs.removeAll();
+                Stubs.removeAll();
+            }
+        };
+
+        $(document).ready(function () {
+
+            (function () {
+                module("the addMessage method", lifecycle);
+                test("will add the message to the messages section", function () {
+                    var actualContent = null;
+                    $.stubs.addForSelector("#messagesSection > td", function (stub) { stub.append = function (content) { actualContent = content }; });
+
+                    addMessage("theMessage");
+
+                    equals(actualContent, "<div class=''>theMessage</div>");
+                });
+                test("will set the message's class name to the specified type", function () {
+                    var actualContent = null;
+                    $.stubs.addForSelector("#messagesSection > td", function (stub) { stub.append = function (content) { actualContent = content }; });
+
+                    addMessage("theMessage", "theType");
+
+                    equals(actualContent, "<div class='theType'>theMessage</div>");
+                });
+            })();
+
+            (function () {
+                module("the showError method", lifecycle);
+                test("will add the error to the messages section", function () {
+                    var actualMessage = null, actualType = null;
+                    Stubs.add("addMessage", function (message, type) { actualMessage = message; actualType = type; });
+
+                    showError("theError");
+
+                    equals(actualMessage, "theError");
+                    equals(actualType, "error");
+                });
+            })();
+
+            (function () {
+                module("the onFailed method", lifecycle);
+                test("will show the error", function () {
+                    var actualError = null
+                    Stubs.add("showError", function (error) { actualError = error; });
+
+                    onFailed(null, "theStatus", "theError");
+
+                    equals(actualError, "An unanticipated error occured while calling the server: theStatus; theError");
+                });
+            })();
+
+            (function () {
+                module("the onSay method", lifecycle);
+                test("will show an error when one occurs", function () {
+                    var actualError = null
+                    Stubs.add("showError", function (error) { actualError = error; });
+
+                    onSay({ error: "anError" });
+
+                    equals(actualError, "An error occurred while trying to say your message: anError");
+                });
+            })();
+
+            (function () {
+                module("the setSayHandler method", lifecycle);
+                test("will submit the sayForm when enter is pressed in the textarea", function () {
+                    var submitInvoked = false;
+                    $.stubs.addForSelector("#sayForm", function (stub) { stub.submit = function (handler) { submitInvoked = true; }; });
+                    $.stubs.addForSelector("#Text", function (stub) { stub.keypress = function (handler) { handler({ keyCode: 13 }); }; });
+
+                    setSayHandler();
+
+                    equals(submitInvoked, true);
+                });
+                test("will clear the textarea after sending the say request", function () {
+                    var actualVal = null;
+                    $.stubs.addForSelector("#sayForm", function (stub) { stub.submit = function (handler) { } });
+                    $.stubs.addForSelector("#Text", function (stub) { stub.keypress = function (handler) { } });
+                    $.stubs.addForSelector("#Text", function (stub) { stub.val = function (val) { actua = val; } });
+
+                    setSayHandler();
+
+                    equals(actualVal, "");
+                });
+            })();
+
+        });
+    </script>
+  </head>
+  <body>
+    <h1 id="qunit-header">room.js Spec</h1>
+    <h2 id="qunit-banner"></h2>
+    <h2 id="qunit-userAgent"></h2>
+    <ol id="qunit-tests"></ol>
+  </body>
+</html>

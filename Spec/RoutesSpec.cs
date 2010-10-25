@@ -55,6 +55,18 @@ namespace MvcAsyncChat
             Assert.Equal("chat", routeData.Values["controller"]);
             Assert.Equal("leave", routeData.Values["action"]);
         }
+
+        [Fact]
+        void The_say_route_will_go_to_the_chat_controller_and_say_action()
+        {
+            var routes = GetRoutes();
+            var httpContext = CreateHttpContext("~/say");
+
+            var routeData = routes.GetRouteData(httpContext);
+
+            Assert.Equal("chat", routeData.Values["controller"]);
+            Assert.Equal("say", routeData.Values["action"]);
+        }
         
         static HttpContextBase CreateHttpContext(string appRelativeCurrentExecutionFilePath)
         {

@@ -2,9 +2,9 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace MvcAsyncChat.InputModels
+namespace MvcAsyncChat.RequestModels
 {
-    public class SayAttempt
+    public class SayRequest
     {
         [Required, StringLength(1024), DataType(DataType.MultilineText)]
         public string Text { get; set; }

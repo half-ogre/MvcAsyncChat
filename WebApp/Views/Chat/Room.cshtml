@@ -1,6 +1,6 @@
 ﻿@using MvcAsyncChat;
-@using MvcAsyncChat.InputModels;
-@model SayAttempt
+@using MvcAsyncChat.RequestModels;
+@model SayRequest
 
 @{
     View.Title = "Room";
@@ -21,10 +21,10 @@
         <ul id="actionsList">
 			<li>@Html.RouteLink("Leave room", RouteName.Leave)</li>
 		</ul>
-		@using (Ajax.BeginForm(new AjaxOptions() { 
+		@using (Ajax.BeginForm("say", new { }, new AjaxOptions() { 
 			OnFailure = "onFailed", 
-			OnSuccess = "onSucceeded", 
-			HttpMethod = "POST", })) {
+			OnSuccess = "onSay", 
+			HttpMethod = "POST", }, new { id = "sayForm"})) {
 			@Html.EditorForModel()
 		}
 	</td>
@@ -34,6 +34,8 @@
 	<script>
 		$(document).ready(function() {
 			$("#Text").attr("placeholder", "You say:");
+			$("#Text").focus();
+			setSayHandler();
 		});
 	</script>
 }

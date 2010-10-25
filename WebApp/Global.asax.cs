@@ -20,6 +20,7 @@ namespace MvcAsyncChat
             routes.MapRoute(RouteName.Enter, "enter", new { controller = "chat", action = "enter" });
             routes.MapRoute(RouteName.Room, "room", new { controller = "chat", action = "room" });
             routes.MapRoute(RouteName.Leave, "leave", new { controller = "chat", action = "leave" });
+            routes.MapRoute(RouteName.Say, "say", new { controller = "chat", action = "say" });
         }
 
         protected void Application_Start()
