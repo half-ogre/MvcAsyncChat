@@ -37,5 +37,11 @@ namespace MvcAsyncChat.Controllers
             authSvc.Authenticate(enterAttempt.Name);
             return RedirectToRoute(RouteName.Room);
         }
+
+        [ActionName("room"), HttpGet, Authorize]
+        public ActionResult ShowRoom()
+        {
+            return View();
+        }
     }
 }

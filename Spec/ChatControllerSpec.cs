@@ -25,7 +25,7 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_redirect_to_room_route_if_user_already_entered()
+            void will_redirect_to_the_room_if_user_already_entered()
             {
                 var moqIdentity = new Mock<IIdentity>();
                 moqIdentity.Setup(x => x.IsAuthenticated).Returns(true);
@@ -64,7 +64,7 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_redirect_to_room_route_after_successful_enter_attempt()
+            void will_redirect_to_the_room_after_a_successful_enter_attempt()
             {
                 var moqAuthSvc = new Mock<IAuthSvc>();
                 var controller = CreateController(moqAuthSvc: moqAuthSvc);
@@ -72,6 +72,19 @@ namespace MvcAsyncChat
                 var result = controller.EnterRoom(new EnterAttempt() { Name = "theName" }) as RedirectToRouteResult;
 
                 Assert.Equal(RouteName.Room, result.RouteName);
+            }
+        }
+
+        public class The_ShowRoom_method
+        {
+            [Fact]
+            void will_show_the_room()
+            {
+                var controller = CreateController();
+
+                var result = controller.ShowRoom() as ViewResult;
+
+                Assert.Equal(string.Empty, result.ViewName);
             }
         }
 

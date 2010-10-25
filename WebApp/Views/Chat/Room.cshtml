@@ -1,0 +1,37 @@
+﻿@model MvcAsyncChat.InputModels.SayAttempt
+
+@{
+    View.Title = "Room";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Head {
+	<script src="@Url.Content("~/Scripts/room.js")"></script>
+}
+
+<tr id="messagesSection">
+    <td></td>
+</tr>
+<tr id="actionsSection">
+    <td>
+		
+		<label for="actionsList">Actions:</label>
+        <ul id="actionsList">
+			
+		</ul>
+		@using (Ajax.BeginForm(new AjaxOptions() { 
+			OnFailure = "onFailed", 
+			OnSuccess = "onSucceeded", 
+			HttpMethod = "POST", })) {
+			@Html.EditorForModel()
+		}
+	</td>
+</tr>
+
+@section PostScript {
+	<script>
+		$(document).ready(function() {
+			$("#Text").attr("placeholder", "You say:");
+		});
+	</script>
+}
