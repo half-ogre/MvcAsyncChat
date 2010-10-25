@@ -15,6 +15,9 @@ namespace MvcAsyncChat
         public static void RegisterRoutes(RouteCollection routes)
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
+
+            routes.MapRoute(RouteName.Home, "", new { controller = "chat", action = "enter" });
+            routes.MapRoute(RouteName.Enter, "enter", new { controller = "chat", action = "enter" });
         }
 
         protected void Application_Start()

@@ -1,8 +1,117 @@
+/* begin reset */
+html, body
+{
+    font-family: Georgia;
+    font-size: 16px;
+    margin: 0;
+}
+
+body
+{
+    height: 100%;
+}
+
+h1
+{
+    font-size: 24px;
+    margin: 10px 0;
+}
+
+h2
+{
+    font-size: 16px;
+    font-style: italic;
+    font-weight: normal;
+    margin: 10px 0;
+}
+
+table
+{
+    border-collapse: collapse;
+}
+
+td
+{
+    padding: 5px;
+}
+/* end reset */
+
+#container
+{
+    height: 100%;
+    width: 100%;
+}
+
+#titleSection > td
+{
+    border-bottom: 2px solid gray;
+    width: 0;
+}
+
+#titleSection h1
+{
+    float: left;
+}
+
+#titleSection #updates
+{
+    display: inline;
+    float: right;
+}
+
+#enterSection > td
+{
+    height: 100%;
+    vertical-align: top;
+}
+
+#enterSection .form-container
+{
+    vertical-align: top;
+}
+
+#enterSection fieldset
+{
+    border: 2px solid gray;
+    margin-top: 10px;
+    padding: 10px;
+    width: 250px;
+}
+
+#enterSection label, #enterSection input
+{
+    display: block;
+}
+
+#enterSection input[type='text']
+{
+    background-color: #efefef;
+    border: 1px solid gray;
+    font-family: Georgia;
+    font-size: 16px;
+    margin: 0 0 10px -2px;
+    padding: 5px 1px;
+    width: 100%;
+}
+
+#enterSection input[type='submit']
+{
+    background-color: silver;
+    border: 1px solid gray;
+    float: right;
+    font-family: Georgia;
+    font-size: 16px;
+    margin: 0 0 0 -2px;
+    padding: 5px;
+}
+
 /* Styles for validation helpers
 -----------------------------------------------------------*/
 .field-validation-error
 {
     color: #ff0000;
+    display: block;
+    margin-bottom: 10px;
 }
 
 .field-validation-valid

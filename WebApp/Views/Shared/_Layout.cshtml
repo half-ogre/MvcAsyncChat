@@ -1,0 +1,22 @@
+﻿<!DOCTYPE html>
+<html>
+	<head>
+		<title>MVC Chat</title>
+		<link rel="stylesheet" href="@Url.Content("~/Content/Site.css")" type="text/css" />
+		<script src="@Url.Content("~/Scripts/jquery-1.4.1.min.js")"></script>
+		<script src="@Url.Content("~/Scripts/jquery.validate.min.js")"></script>
+		<script src="@Url.Content("~/Scripts/jquery.validate.unobtrusive.min.js")"></script>
+		@RenderSection("Head")
+	</head>
+	<body>
+		<table id="container">
+			<tr id="titleSection">
+				<td>
+					<h1>MVC Chat</h1>
+				</td>
+			</tr>
+			@RenderBody()
+		</table>
+		@RenderSection("PostScript")
+	</body>
+</html>
