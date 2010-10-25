@@ -9,5 +9,11 @@ namespace MvcAsyncChat
         {
             FormsAuthentication.SetAuthCookie(name, false);
         }
+
+
+        public void Unauthenticate()
+        {
+            FormsAuthentication.SignOut();
+        }
     }
 }

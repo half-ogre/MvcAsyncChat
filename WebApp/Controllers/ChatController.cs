@@ -43,5 +43,13 @@ namespace MvcAsyncChat.Controllers
         {
             return View();
         }
+
+        [ActionName("leave"), HttpGet, Authorize]
+        public ActionResult LeaveRoom()
+        {
+            authSvc.Unauthenticate();
+
+            return RedirectToRoute(RouteName.Enter);
+        }
     }
 }

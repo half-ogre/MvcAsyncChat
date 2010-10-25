@@ -88,6 +88,30 @@ namespace MvcAsyncChat
             }
         }
 
+        public class The_LeaveRoom_method
+        {
+            [Fact]
+            void will_unauthenticate_the_user()
+            {
+                var moqAuthSvc = new Mock<IAuthSvc>();
+                var controller = CreateController(moqAuthSvc: moqAuthSvc);
+
+                controller.LeaveRoom();
+
+                moqAuthSvc.Verify(x => x.Unauthenticate());
+            }
+
+            [Fact]
+            void will_redirect_to_the_enter_form()
+            {
+                var controller = CreateController();
+
+                var result = controller.LeaveRoom() as RedirectToRouteResult;
+
+                Assert.Equal(RouteName.Enter, result.RouteName);
+            }
+        }
+
         static ChatController CreateController(
             Mock<IIdentity> moqIdentity = null,
             Mock<IAuthSvc> moqAuthSvc = null)

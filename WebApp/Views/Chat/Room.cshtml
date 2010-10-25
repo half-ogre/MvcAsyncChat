@@ -1,4 +1,6 @@
-﻿@model MvcAsyncChat.InputModels.SayAttempt
+﻿@using MvcAsyncChat;
+@using MvcAsyncChat.InputModels;
+@model SayAttempt
 
 @{
     View.Title = "Room";
@@ -17,7 +19,7 @@
 		
 		<label for="actionsList">Actions:</label>
         <ul id="actionsList">
-			
+			<li>@Html.RouteLink("Leave room", RouteName.Leave)</li>
 		</ul>
 		@using (Ajax.BeginForm(new AjaxOptions() { 
 			OnFailure = "onFailed", 
