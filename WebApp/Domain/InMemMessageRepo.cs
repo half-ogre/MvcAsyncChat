@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace MvcAsyncChat.Domain
 {
@@ -12,9 +13,20 @@ namespace MvcAsyncChat.Domain
         
         public IList<Tuple<string, DateTime>> Messages { get; private set; }
         
-        public void Add(string message)
+        public DateTime Add(string message)
         {
-            Messages.Add(new Tuple<string, DateTime>(message, DateTime.UtcNow));
+            var timestamp = DateTime.UtcNow;
+
+            Messages.Add(new Tuple<string, DateTime>(message, timestamp));
+            
+            return timestamp;
+        }
+
+        public IEnumerable<string> GetSince(DateTime since)
+        {
+            return Messages
+                .Where(x => x.Item2 > since)
+                .Select(x => x.Item1);
         }
     }
 }

@@ -22,7 +22,7 @@
 			<li>@Html.RouteLink("Leave room", RouteName.Leave)</li>
 		</ul>
 		@using (Ajax.BeginForm("say", new { }, new AjaxOptions() { 
-			OnFailure = "onFailed", 
+			OnFailure = "onSayFailed", 
 			OnSuccess = "onSay", 
 			HttpMethod = "POST", }, new { id = "sayForm"})) {
 			@Html.EditorForModel()
@@ -36,6 +36,7 @@
 			$("#Text").attr("placeholder", "You say:");
 			$("#Text").focus();
 			setSayHandler();
+			getMessages();
 		});
 	</script>
 }

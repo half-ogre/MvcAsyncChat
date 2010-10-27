@@ -58,11 +58,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ChatController.cs" />
+    <Compile Include="Domain\ICallbackQueue.cs" />
     <Compile Include="Domain\IMessageRepo.cs" />
+    <Compile Include="Domain\CallbackQueue.cs" />
     <Compile Include="Domain\InMemMessageRepo.cs" />
     <Compile Include="RequestModels\EnterRequest.cs" />
+    <Compile Include="RequestModels\GetMessagesRequest.cs" />
     <Compile Include="RequestModels\SayRequest.cs" />
+    <Compile Include="ResponseModels\GetMessagesResponse.cs" />
     <Compile Include="ResponseModels\SayResponse.cs" />
+    <Compile Include="Svcs\DateTimeSvc.cs" />
     <Compile Include="Svcs\FormsAuthSvc.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -73,6 +78,13 @@
     <Compile Include="Svcs\IAuthSvc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RouteName.cs" />
+    <Compile Include="Svcs\IDateTimeSvc.cs" />
+    <Compile Include="Svcs\ITimerSvc.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Svcs\TimerSvc.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />

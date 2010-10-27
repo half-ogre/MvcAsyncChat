@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MvcAsyncChat
+namespace MvcAsyncChat.Svcs
 {
     public interface IAuthSvc
     {

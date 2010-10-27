@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Web.Security;
 
-namespace MvcAsyncChat
+namespace MvcAsyncChat.Svcs
 {
     public class FormsAuthSvc : IAuthSvc
     {

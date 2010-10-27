@@ -52,14 +52,14 @@
             })();
 
             (function () {
-                module("the onFailed method", lifecycle);
+                module("the onSayFailed method", lifecycle);
                 test("will show the error", function () {
                     var actualError = null
                     Stubs.add("showError", function (error) { actualError = error; });
 
-                    onFailed(null, "theStatus", "theError");
+                    onSayFailed(null, "theStatus", "theError");
 
-                    equals(actualError, "An unanticipated error occured while calling the server: theStatus; theError");
+                    equals(actualError, "An unanticipated error occured during the say request: theStatus; theError");
                 });
             })();
 
@@ -80,21 +80,175 @@
                 test("will submit the sayForm when enter is pressed in the textarea", function () {
                     var submitInvoked = false;
                     $.stubs.addForSelector("#sayForm", function (stub) { stub.submit = function (handler) { submitInvoked = true; }; });
-                    $.stubs.addForSelector("#Text", function (stub) { stub.keypress = function (handler) { handler({ keyCode: 13 }); }; });
+                    $.stubs.addForSelector("#Text", function (stub) {
+                        stub.keypress = function (handler) { handler({ keyCode: 13 }); };
+                        stub.val = function (val) { };
+                    });
 
                     setSayHandler();
 
                     equals(submitInvoked, true);
                 });
-                test("will clear the textarea after sending the say request", function () {
-                    var actualVal = null;
+                test("will clear the textarea after sending the say request and cancel the keypress", function () {
+                    var actualVal = null, actualHandlerResult = null;
                     $.stubs.addForSelector("#sayForm", function (stub) { stub.submit = function (handler) { } });
-                    $.stubs.addForSelector("#Text", function (stub) { stub.keypress = function (handler) { } });
-                    $.stubs.addForSelector("#Text", function (stub) { stub.val = function (val) { actua = val; } });
+                    $.stubs.addForSelector("#Text", function (stub) {
+                        stub.keypress = function (handler) { actualHandlerResult = handler({ keyCode: 13 }); };
+                        stub.val = function (val) { actualVal = val; }
+                    });
 
                     setSayHandler();
 
                     equals(actualVal, "");
+                    equals(actualHandlerResult, false);
+                });
+            })();
+
+            (function () {
+                module("the retryGetMessages method", lifecycle);
+                test("will increment the error count", function () {
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    retryGetMessages();
+
+                    equals(errorCount, 1);
+                });
+                test("will retry the messages request, waiting a number seconds equal to 2^errorCount", function () {
+                    var actualInterval = 0;
+                    Stubs.add("errorCount", 4);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("setTimeout", function (handler, interval) { actualInterval = interval; });
+
+                    retryGetMessages();
+
+                    equals(actualInterval, Math.pow(2, 5) * 1000);
+                });
+                test("will show an error stating messages updates will stop when the maximum number of consecutive errors has been met", function () {
+                    var actualError = null;
+                    Stubs.add("errorCount", 6);
+                    Stubs.add("showError", function (error) { actualError = error; });
+
+                    retryGetMessages();
+
+                    equals(actualError, "There have been too many errors. Please leave the chat room and re-enter.");
+                });
+            })();
+
+            (function () {
+                module("the onMessagesFailed method", lifecycle);
+                test("will show the error", function () {
+                    var actualError = null;
+                    Stubs.add("showError", function (error) { actualError = error; });
+
+                    onMessagesFailed(null, "theStatus", "theError");
+
+                    equals(actualError, "An unanticipated error occured during the messages request: theStatus; theError");
+                });
+                test("will retry the messages request", function () {
+                    var retryAttempted = false;
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { retryAttempted = true; });
+
+                    onMessagesFailed(null, "theStatus", "theError");
+
+                    equals(retryAttempted, true);
+                });
+            })();
+
+            (function () {
+                module("the onMessages method", lifecycle);
+                test("will show errors", function () {
+                    var actualError = null;
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { actualError = error; });
+                    Stubs.add("retryGetMessages", function () { });
+                    Stubs.add("addMessage", function (message, type) { });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    onMessages({ error: "theError" }, "theStatus", null);
+
+                    equals(actualError, "An error occurred while trying to get messages: theError");
+                });
+                test("will retry the messages request after an error", function () {
+                    var retryAttempted = false;
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { retryAttempted = true });
+                    Stubs.add("addMessage", function (message, type) { });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    onMessages({ error: "theError" }, "theStatus", null);
+
+                    equals(retryAttempted, true);
+                });
+                test("will reset the error count", function () {
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 5);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { });
+                    Stubs.add("addMessage", function (message, type) { });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    onMessages({ since: "aNewSince", messages: ["theFirstMessage", "theSecondMessage"] }, "theStatus", null);
+
+                    equals(errorCount, 0);
+                });
+                test("will update the since date", function () {
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { });
+                    Stubs.add("addMessage", function (message, type) { });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    onMessages({ since: "aNewSinceDate", messages: ["theFirstMessage", "theSecondMessage"] }, "theStatus", null);
+
+                    equals(since, "aNewSinceDate");
+                });
+                test("will display new messages", function () {
+                    var actualNewMessages = [];
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { });
+                    Stubs.add("addMessage", function (message, type) { actualNewMessages.push(message); });
+                    Stubs.add("setTimeout", function (handler, interval) { });
+
+                    onMessages({ since: "aNewSinceDate", messages: ["theFirstMessage", "theSecondMessage"] }, "theStatus", null);
+
+                    equals(actualNewMessages[0], "theFirstMessage");
+                    equals(actualNewMessages[1], "theSecondMessage");
+                });
+                test("will start the next messages request", function () {
+                    var getMessagesInvoked = false;
+                    Stubs.add("since", "theSinceDate");
+                    Stubs.add("errorCount", 0);
+                    Stubs.add("showError", function (error) { });
+                    Stubs.add("retryGetMessages", function () { });
+                    Stubs.add("addMessage", function (message, type) { });
+                    Stubs.add("setTimeout", function (handler, interval) { handler(); });
+                    Stubs.add("getMessages", function () { getMessagesInvoked = true; });
+
+                    onMessages({ since: "aNewSinceDate", messages: ["theFirstMessage", "theSecondMessage"] }, "theStatus", null);
+
+                    equals(getMessagesInvoked, true);
+                });
+            })();
+
+            (function () {
+                module("the getMessages method", lifecycle);
+                test("will pass the since date to the server", function () {
+                    var actualSince = null
+                    Stubs.add("since", "aSinceDate");
+                    $.stubs.addForFunction("ajax", function (options) { actualSince = options.data.since; });
+
+                    getMessages();
+
+                    equals(actualSince, "aSinceDate");
                 });
             })();
 
