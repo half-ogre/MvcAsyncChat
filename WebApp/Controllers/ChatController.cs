@@ -61,6 +61,7 @@ namespace MvcAsyncChat.Controllers
         public ActionResult LeaveRoom()
         {
             authSvc.Unauthenticate();
+            AddMessage(string.Format("{0} has left the room.", User.Identity.Name));
 
             return RedirectToRoute(RouteName.Enter);
         }

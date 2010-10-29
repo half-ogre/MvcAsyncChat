@@ -148,6 +148,43 @@ namespace MvcAsyncChat
 
                 Assert.Equal(RouteName.Enter, result.RouteName);
             }
+
+            [Fact]
+            void will_add_a_message_to_the_room_showing_the_participant_has_left()
+            {
+                var moqIdentity = new Mock<IIdentity>();
+                moqIdentity.Setup(x => x.Name).Returns("theName");
+                var moqMessageRepo = new Mock<IMessageRepo>();
+                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessageRepo, moqIdentity: moqIdentity);
+
+                controller.LeaveRoom();
+
+                moqMessageRepo.Verify(x => x.Add("theName has left the room."));
+            }
+
+            [Fact]
+            void will_call_any_queued_callbacks_with_the_left_room_message()
+            {
+                var firstCallbackCalled = false;
+                var secondCallbackCalled = false;
+                var since = DateTime.UtcNow;
+                var moqMessagesRepo = new Mock<IMessageRepo>();
+                moqMessagesRepo.Setup(x => x.Add(It.IsAny<string>()))
+                    .Returns(since);
+                var moqCallbackQueue = new Mock<ICallbackQueue>();
+                moqCallbackQueue.Setup(x => x.DequeueAll())
+                    .Returns(new Action<IEnumerable<string>, DateTime>[] { 
+                        (messages, timestamp) => { if (messages.First() == "theName has left the room." && timestamp == since) firstCallbackCalled = true; }, 
+                        (messages, timestamp) => { if (messages.First() == "theName has left the room." && timestamp == since) secondCallbackCalled = true; } });
+                var moqIdentity = new Mock<IIdentity>();
+                moqIdentity.Setup(x => x.Name).Returns("theName");
+                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue, moqIdentity: moqIdentity);
+
+                controller.LeaveRoom();
+
+                Assert.True(firstCallbackCalled);
+                Assert.True(secondCallbackCalled);
+            }
         }
 
         public class The_Say_method
