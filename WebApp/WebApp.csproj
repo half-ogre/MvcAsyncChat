@@ -34,6 +34,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Ninject">
+      <HintPath>..\Deps\Ninject\Ninject.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -72,6 +75,8 @@
     <Compile Include="Domain\IMessageRepo.cs" />
     <Compile Include="Domain\CallbackQueue.cs" />
     <Compile Include="Domain\InMemMessageRepo.cs" />
+    <Compile Include="NinjectControllerActivator.cs" />
+    <Compile Include="NinjectDependencyResolver.cs" />
     <Compile Include="RequestModels\EnterRequest.cs" />
     <Compile Include="RequestModels\GetMessagesRequest.cs" />
     <Compile Include="RequestModels\SayRequest.cs" />

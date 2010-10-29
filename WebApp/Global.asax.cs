@@ -9,6 +9,8 @@ namespace MvcAsyncChat
 {
     public class WebApp : HttpApplication
     {
+        readonly IDependencyResolver dependencyResolver = new NinjectDependencyResolver();
+        
         public static void RegisterGlobalFilters(GlobalFilterCollection filters)
         {
             filters.Add(new HandleErrorAttribute());
@@ -47,13 +49,15 @@ namespace MvcAsyncChat
             RegisterGlobalFilters(GlobalFilters.Filters);
             RegisterRoutes(RouteTable.Routes);
 
-            StartTimers(CallbackQueue.Current, TimerSvc.Current);
+            DependencyResolver.SetResolver(dependencyResolver);
+
+            StartTimers(dependencyResolver.GetService<ICallbackQueue>(), dependencyResolver.GetService<ITimerSvc>());
         }
 
         public override void Dispose()
         {
             base.Dispose();
-            StopTimers(TimerSvc.Current);
+            StopTimers(dependencyResolver.GetService<ITimerSvc>());
         }
     }
 }

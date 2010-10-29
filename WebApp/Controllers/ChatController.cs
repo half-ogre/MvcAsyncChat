@@ -16,21 +16,18 @@ namespace MvcAsyncChat.Controllers
         readonly IAuthSvc authSvc;
         readonly IMessageRepo messageRepo;
         readonly ICallbackQueue callbackQueue;
-        readonly ITimerSvc timerSvc;
         readonly IDateTimeSvc dateTimeSvc;
 
-        public ChatController() : this(null, null, null, null) {}
-
         public ChatController(
-            IAuthSvc authSvc = null,
-            IMessageRepo messageRepo = null,
-            ICallbackQueue callbackQueue = null,
-            IDateTimeSvc dateTimeSvc = null)
+            IAuthSvc authSvc,
+            IMessageRepo messageRepo,
+            ICallbackQueue callbackQueue,
+            IDateTimeSvc dateTimeSvc)
         {
-            this.authSvc = authSvc ?? new FormsAuthSvc();
-            this.messageRepo = messageRepo ?? new InMemMessageRepo();
-            this.callbackQueue = callbackQueue ?? CallbackQueue.Current;
-            this.dateTimeSvc = dateTimeSvc ?? new DateTimeSvc();
+            this.authSvc = authSvc;
+            this.messageRepo = messageRepo;
+            this.callbackQueue = callbackQueue;
+            this.dateTimeSvc = dateTimeSvc;
         }
         
         [ActionName("enter"), HttpGet]

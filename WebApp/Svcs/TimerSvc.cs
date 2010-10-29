@@ -32,18 +32,5 @@ namespace MvcAsyncChat.Svcs
                 timers.Remove(id);
             }
         }
-
-        static TimerSvc current;
-
-        public static TimerSvc Current
-        {
-            get
-            {
-                if (current == null)
-                    current = new TimerSvc();
-
-                return current;
-            }
-        }
     }
 }

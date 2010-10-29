@@ -38,18 +38,5 @@ namespace MvcAsyncChat.Domain
                     oldest = Callbacks.Peek();
             }
         }
-
-        static CallbackQueue current;
-
-        public static CallbackQueue Current
-        {
-            get
-            {
-                if (current == null)
-                    current = new CallbackQueue();
-
-                return current;
-            }
-        }
     }
 }
