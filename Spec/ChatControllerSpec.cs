@@ -78,6 +78,39 @@ namespace MvcAsyncChat
 
                 Assert.Equal(RouteName.Room, result.RouteName);
             }
+
+            [Fact]
+            void will_add_a_message_to_the_room_showing_the_participant_has_entered()
+            {
+                var moqMessageRepo = new Mock<IMessageRepo>();
+                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessageRepo);
+
+                var result = controller.EnterRoom(new EnterRequest() { Name = "theName" }) as RedirectToRouteResult;
+
+                moqMessageRepo.Verify(x => x.Add("theName has entered the room."));
+            }
+
+            [Fact]
+            void will_call_any_queued_callbacks_with_the_entered_room_message()
+            {
+                var firstCallbackCalled = false;
+                var secondCallbackCalled = false;
+                var since = DateTime.UtcNow;
+                var moqMessagesRepo = new Mock<IMessageRepo>();
+                moqMessagesRepo.Setup(x => x.Add(It.IsAny<string>()))
+                    .Returns(since);
+                var moqCallbackQueue = new Mock<ICallbackQueue>();
+                moqCallbackQueue.Setup(x => x.DequeueAll())
+                    .Returns(new Action<IEnumerable<string>, DateTime>[] { 
+                        (messages, timestamp) => { if (messages.First() == "theName has entered the room." && timestamp == since) firstCallbackCalled = true; }, 
+                        (messages, timestamp) => { if (messages.First() == "theName has entered the room." && timestamp == since) secondCallbackCalled = true; } });
+                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
+
+                controller.EnterRoom(new EnterRequest() { Name = "theName" });
+
+                Assert.True(firstCallbackCalled);
+                Assert.True(secondCallbackCalled);
+            }
         }
 
         public class The_ShowRoom_method

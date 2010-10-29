@@ -46,6 +46,8 @@ namespace MvcAsyncChat.Controllers
                 return View(enterRequest);
 
             authSvc.Authenticate(enterRequest.Name);
+            AddMessage(string.Format("{0} has entered the room.", enterRequest.Name));
+
             return RedirectToRoute(RouteName.Room);
         }
 
@@ -69,10 +71,7 @@ namespace MvcAsyncChat.Controllers
             if (!ModelState.IsValid)
                 return Json(new SayResponse() { error = "The say request was invalid." });
 
-            var timestamp = messageRepo.Add(sayRequest.Text);
-
-            foreach(var callback in callbackQueue.DequeueAll())
-                callback(new [] { sayRequest.Text }, timestamp);
+            AddMessage(sayRequest.Text);
 
             return Json(new SayResponse());
         }
@@ -128,6 +127,14 @@ namespace MvcAsyncChat.Controllers
             data.messages = messages;
 
             return Json(data);
+        }
+
+        void AddMessage(string message)
+        {
+            var timestamp = messageRepo.Add(message);
+
+            foreach (var callback in callbackQueue.DequeueAll())
+                callback(new[] { message }, timestamp);
         }
     }
 }
