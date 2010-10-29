@@ -50,6 +50,7 @@
     </Compile>
     <Compile Include="ChatControllerSpec.cs" />
     <Compile Include="CallbackQueueSpec.cs" />
+    <Compile Include="GlobalTimersSpec.cs" />
     <Compile Include="MessageRepoSpec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RoutesSpec.cs" />

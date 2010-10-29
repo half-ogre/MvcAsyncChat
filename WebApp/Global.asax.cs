@@ -28,20 +28,23 @@ namespace MvcAsyncChat
             routes.MapRoute(RouteName.Messages, "messages", new { controller = "chat", action = "messages" });
         }
 
-        public static void StartTimers(ICallbackQueue callbackQueue, ITimerSvc timerSvc)
+        public static void StartTimers(ICallbackQueue callbackQueue, ITimerSvc timerSvc, IDateTimeSvc dateTimeSvc)
         {
-            timerSvc.AddPeriodicTimer("CallExpiredCallbacks", 15 * 1000, () =>
+            var period = Math.Floor(Const.IdleCallbackLimit / 2) * 1000;
+            
+            timerSvc.AddPeriodicTimer(Const.CallIdleCallbacksTimerId, period, () =>
             {
-                var since = DateTime.UtcNow.AddSeconds(-1);
+                var expiry = dateTimeSvc.GetCurrentDateTimeAsUtc().AddSeconds(Const.IdleCallbackLimit * -1);
+                var newSince = dateTimeSvc.GetCurrentDateTimeAsUtc().AddSeconds(-1);
 
-                foreach (var callback in callbackQueue.DequeueExpired(DateTime.UtcNow.AddSeconds(-30)))
-                    callback(new string[] { }, since);
+                foreach (var callback in callbackQueue.DequeueExpired(expiry))
+                    callback(new string[] { }, newSince);
             });
         }
 
         public static void StopTimers(ITimerSvc timerSvc)
         {
-            timerSvc.RemovePeriodicTimer("CallExpiredCallbacks");
+            timerSvc.RemovePeriodicTimer(Const.CallIdleCallbacksTimerId);
         }
 
         protected void Application_Start()
@@ -51,7 +54,10 @@ namespace MvcAsyncChat
 
             DependencyResolver.SetResolver(dependencyResolver);
 
-            StartTimers(dependencyResolver.GetService<ICallbackQueue>(), dependencyResolver.GetService<ITimerSvc>());
+            StartTimers(
+                dependencyResolver.GetService<ICallbackQueue>(), 
+                dependencyResolver.GetService<ITimerSvc>(),
+                dependencyResolver.GetService<IDateTimeSvc>());
         }
 
         public override void Dispose()
