@@ -72,7 +72,9 @@
   <ItemGroup>
     <Compile Include="Const.cs" />
     <Compile Include="Controllers\ChatController.cs" />
+    <Compile Include="Domain\ChatRoom.cs" />
     <Compile Include="Domain\ICallbackQueue.cs" />
+    <Compile Include="Domain\IChatRoom.cs" />
     <Compile Include="Domain\IMessageRepo.cs" />
     <Compile Include="Domain\CallbackQueue.cs" />
     <Compile Include="Domain\InMemMessageRepo.cs" />

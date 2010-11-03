@@ -14,19 +14,16 @@ namespace MvcAsyncChat.Controllers
     public class ChatController : AsyncController
     {
         readonly IAuthSvc authSvc;
-        readonly IMessageRepo messageRepo;
-        readonly ICallbackQueue callbackQueue;
+        readonly IChatRoom chatRoom;
         readonly IDateTimeSvc dateTimeSvc;
 
         public ChatController(
             IAuthSvc authSvc,
-            IMessageRepo messageRepo,
-            ICallbackQueue callbackQueue,
+            IChatRoom chatRoom,
             IDateTimeSvc dateTimeSvc)
         {
             this.authSvc = authSvc;
-            this.messageRepo = messageRepo;
-            this.callbackQueue = callbackQueue;
+            this.chatRoom = chatRoom;
             this.dateTimeSvc = dateTimeSvc;
         }
         
@@ -46,7 +43,7 @@ namespace MvcAsyncChat.Controllers
                 return View(enterRequest);
 
             authSvc.Authenticate(enterRequest.Name);
-            AddMessage(string.Format("{0} has entered the room.", enterRequest.Name));
+            chatRoom.AddParticipant(enterRequest.Name);
 
             return RedirectToRoute(RouteName.Room);
         }
@@ -61,7 +58,7 @@ namespace MvcAsyncChat.Controllers
         public ActionResult LeaveRoom()
         {
             authSvc.Unauthenticate();
-            AddMessage(string.Format("{0} has left the room.", User.Identity.Name));
+            chatRoom.RemoveParticipant(User.Identity.Name);
 
             return RedirectToRoute(RouteName.Enter);
         }
@@ -72,7 +69,7 @@ namespace MvcAsyncChat.Controllers
             if (!ModelState.IsValid)
                 return Json(new SayResponse() { error = "The say request was invalid." });
 
-            AddMessage(sayRequest.Text);
+            chatRoom.AddMessage(sayRequest.Text);
 
             return Json(new SayResponse());
         }
@@ -95,24 +92,13 @@ namespace MvcAsyncChat.Controllers
             if (!string.IsNullOrEmpty(getMessagesRequest.since))
                 since = DateTime.Parse(getMessagesRequest.since).ToUniversalTime();
 
-            var messages = messageRepo.GetSince(since);
-
-            if (messages.Count() > 0)
+            chatRoom.GetMessages(since, (newMessages, timestamp) => 
             {
                 AsyncManager.Parameters["error"] = null;
-                AsyncManager.Parameters["since"] = since;
-                AsyncManager.Parameters["messages"] = messages;
+                AsyncManager.Parameters["since"] = timestamp;
+                AsyncManager.Parameters["messages"] = newMessages;
                 AsyncManager.OutstandingOperations.Decrement();
-            }
-            else
-            {
-                callbackQueue.Enqueue((newMessages, timestamp) => {
-                    AsyncManager.Parameters["error"] = null;
-                    AsyncManager.Parameters["since"] = timestamp;
-                    AsyncManager.Parameters["messages"] = newMessages;
-                    AsyncManager.OutstandingOperations.Decrement();
-                });
-            }
+            });
         }
 
         public ActionResult GetMessagesCompleted(
@@ -128,14 +114,6 @@ namespace MvcAsyncChat.Controllers
             data.messages = messages;
 
             return Json(data);
-        }
-
-        void AddMessage(string message)
-        {
-            var timestamp = messageRepo.Add(message);
-
-            foreach (var callback in callbackQueue.DequeueAll())
-                callback(new[] { message }, timestamp);
         }
     }
 }

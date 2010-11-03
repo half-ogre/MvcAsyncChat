@@ -38,7 +38,9 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Web" />
-    <Reference Include="System.Web.Mvc, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Web.Mvc, Version=3.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\Deps\AspNetMvc\System.Web.Mvc.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web.Routing" />
     <Reference Include="xunit">
       <HintPath>..\Deps\xunit\xunit.dll</HintPath>
@@ -50,6 +52,7 @@
     </Compile>
     <Compile Include="ChatControllerSpec.cs" />
     <Compile Include="CallbackQueueSpec.cs" />
+    <Compile Include="ChatRoomSpec.cs" />
     <Compile Include="GlobalTimersSpec.cs" />
     <Compile Include="MessageRepoSpec.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

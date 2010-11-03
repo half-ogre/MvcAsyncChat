@@ -30,7 +30,7 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_redirect_to_the_room_if_user_already_entered()
+            void will_redirect_to_the_room_if_user_is_authenticated()
             {
                 var moqIdentity = new Mock<IIdentity>();
                 moqIdentity.Setup(x => x.IsAuthenticated).Returns(true);
@@ -45,7 +45,7 @@ namespace MvcAsyncChat
         public class The_EnterRoom_method
         {
             [Fact]
-            void will_show_the_enter_form_with_errors_when_the_enter_attempt_state_is_invalid()
+            void will_show_the_enter_form_with_errors_when_the_request_is_invalid()
             {
                 var controller = CreateControllerWithMoqs();
                 var model = new EnterRequest() { Name = "aName" };
@@ -58,7 +58,7 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_authenticate_the_user_when_the_enter_attempt_is_valid()
+            void will_authenticate_the_user_when_the_request_is_valid()
             {
                 var moqAuthSvc = new Mock<IAuthSvc>();
                 var controller = CreateControllerWithMoqs(moqAuthSvc: moqAuthSvc);
@@ -69,7 +69,18 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_redirect_to_the_room_after_a_successful_enter_attempt()
+            void will_add_the_participant_to_the_chat_room()
+            {
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
+
+                var result = controller.EnterRoom(new EnterRequest() { Name = "theName" }) as RedirectToRouteResult;
+
+                moqChatRoom.Verify(x => x.AddParticipant("theName"));
+            }
+
+            [Fact]
+            void will_redirect_to_the_room_after_adding_the_participant()
             {
                 var moqAuthSvc = new Mock<IAuthSvc>();
                 var controller = CreateControllerWithMoqs(moqAuthSvc: moqAuthSvc);
@@ -77,39 +88,6 @@ namespace MvcAsyncChat
                 var result = controller.EnterRoom(new EnterRequest() { Name = "theName" }) as RedirectToRouteResult;
 
                 Assert.Equal(RouteName.Room, result.RouteName);
-            }
-
-            [Fact]
-            void will_add_a_message_to_the_room_showing_the_participant_has_entered()
-            {
-                var moqMessageRepo = new Mock<IMessageRepo>();
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessageRepo);
-
-                var result = controller.EnterRoom(new EnterRequest() { Name = "theName" }) as RedirectToRouteResult;
-
-                moqMessageRepo.Verify(x => x.Add("theName has entered the room."));
-            }
-
-            [Fact]
-            void will_call_any_queued_callbacks_with_the_entered_room_message()
-            {
-                var firstCallbackCalled = false;
-                var secondCallbackCalled = false;
-                var since = DateTime.UtcNow;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.Add(It.IsAny<string>()))
-                    .Returns(since);
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                moqCallbackQueue.Setup(x => x.DequeueAll())
-                    .Returns(new Action<IEnumerable<string>, DateTime>[] { 
-                        (messages, timestamp) => { if (messages.First() == "theName has entered the room." && timestamp == since) firstCallbackCalled = true; }, 
-                        (messages, timestamp) => { if (messages.First() == "theName has entered the room." && timestamp == since) secondCallbackCalled = true; } });
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
-
-                controller.EnterRoom(new EnterRequest() { Name = "theName" });
-
-                Assert.True(firstCallbackCalled);
-                Assert.True(secondCallbackCalled);
             }
         }
 
@@ -140,6 +118,19 @@ namespace MvcAsyncChat
             }
 
             [Fact]
+            void will_remove_the_participant_from_the_chat_room()
+            {
+                var moqIdentity = new Mock<IIdentity>();
+                moqIdentity.Setup(x => x.Name).Returns("theName");
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqIdentity: moqIdentity, moqChatRoom: moqChatRoom);
+
+                controller.LeaveRoom();
+
+                moqChatRoom.Verify(x => x.RemoveParticipant("theName"));
+            }
+
+            [Fact]
             void will_redirect_to_the_enter_form()
             {
                 var controller = CreateControllerWithMoqs();
@@ -148,49 +139,12 @@ namespace MvcAsyncChat
 
                 Assert.Equal(RouteName.Enter, result.RouteName);
             }
-
-            [Fact]
-            void will_add_a_message_to_the_room_showing_the_participant_has_left()
-            {
-                var moqIdentity = new Mock<IIdentity>();
-                moqIdentity.Setup(x => x.Name).Returns("theName");
-                var moqMessageRepo = new Mock<IMessageRepo>();
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessageRepo, moqIdentity: moqIdentity);
-
-                controller.LeaveRoom();
-
-                moqMessageRepo.Verify(x => x.Add("theName has left the room."));
-            }
-
-            [Fact]
-            void will_call_any_queued_callbacks_with_the_left_room_message()
-            {
-                var firstCallbackCalled = false;
-                var secondCallbackCalled = false;
-                var since = DateTime.UtcNow;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.Add(It.IsAny<string>()))
-                    .Returns(since);
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                moqCallbackQueue.Setup(x => x.DequeueAll())
-                    .Returns(new Action<IEnumerable<string>, DateTime>[] { 
-                        (messages, timestamp) => { if (messages.First() == "theName has left the room." && timestamp == since) firstCallbackCalled = true; }, 
-                        (messages, timestamp) => { if (messages.First() == "theName has left the room." && timestamp == since) secondCallbackCalled = true; } });
-                var moqIdentity = new Mock<IIdentity>();
-                moqIdentity.Setup(x => x.Name).Returns("theName");
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue, moqIdentity: moqIdentity);
-
-                controller.LeaveRoom();
-
-                Assert.True(firstCallbackCalled);
-                Assert.True(secondCallbackCalled);
-            }
         }
 
         public class The_Say_method
         {
             [Fact]
-            void will_return_an_error_message_if_say_request_is_invalid()
+            void will_return_an_error_message_if_request_is_invalid()
             {
                 var controller = CreateControllerWithMoqs();
                 controller.ModelState.AddModelError("theKey", "theError");
@@ -201,46 +155,24 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_add_message_to_repo()
+            void will_add_the_message_to_the_chat_room()
             {
-                var moqMessageRepo = new Mock<IMessageRepo>();
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessageRepo);
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
 
                 controller.Say(new SayRequest() { Text = "aMessage" });
 
-                moqMessageRepo.Verify(x => x.Add("aMessage"));
+                moqChatRoom.Verify(x => x.AddMessage("aMessage"));
             }
 
             [Fact]
-            void will_send_a_response_with_no_error_when_say_request_is_valid()
+            void will_send_a_success_response()
             {
                 var controller = CreateControllerWithMoqs();
 
                 var result = controller.Say(new SayRequest() { Text = "aMessage" }) as JsonResult;
 
                 Assert.Null(((SayResponse)result.Data).error);
-            }
-
-            [Fact]
-            void will_call_any_queued_callbacks_with_the_new_message_and_since_date()
-            {
-                var firstCallbackCalled = false;
-                var secondCallbackCalled = false;
-                var since = DateTime.UtcNow;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.Add(It.IsAny<string>()))
-                    .Returns(since);
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                moqCallbackQueue.Setup(x => x.DequeueAll())
-                    .Returns(new Action<IEnumerable<string>, DateTime>[] { 
-                        (messages, timestamp) => { if (messages.First() == "aMessage" && timestamp == since) firstCallbackCalled = true; }, 
-                        (messages, timestamp) => { if (messages.First() == "aMessage" && timestamp == since) secondCallbackCalled = true; } });
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
-
-                var result = controller.Say(new SayRequest() { Text = "aMessage" }) as JsonResult;
-
-                Assert.True(firstCallbackCalled);
-                Assert.True(secondCallbackCalled);
             }
         }
 
@@ -259,108 +191,41 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_use_the_specified_sicne_date()
+            void will_use_the_specified_since_timestamp()
             {
                 var since = DateTime.UtcNow;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo);
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
 
                 controller.GetMessagesAsync(new GetMessagesRequest() { since = since.ToString("o") });
 
-                moqMessagesRepo.Verify(x => x.GetSince(since));
+                moqChatRoom.Verify(x => x.GetMessages(since, It.IsAny<Action<IEnumerable<string>, DateTime>>()));
             }
 
             [Fact]
-            void will_use_the_current_time_as_a_new_since_date_when_one_is_not_specified()
+            void will_use_the_current_time_as_a_new_since_timestamp_when_one_is_not_specified()
             {
-                var newSince = DateTime.UtcNow;
+                var now = DateTime.UtcNow;
                 var moqDateTimeSvc = new Mock<IDateTimeSvc>();
-                moqDateTimeSvc.Setup(x => x.GetCurrentDateTimeAsUtc()).Returns(newSince);
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                var controller = CreateControllerWithMoqs(moqDateTimeSvc: moqDateTimeSvc, moqMessageRepo: moqMessagesRepo);
+                moqDateTimeSvc.Setup(x => x.GetCurrentDateTimeAsUtc()).Returns(now);
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqDateTimeSvc: moqDateTimeSvc, moqChatRoom: moqChatRoom);
 
                 controller.GetMessagesAsync(new GetMessagesRequest());
 
-                moqMessagesRepo.Verify(x => x.GetSince(newSince));
+                moqChatRoom.Verify(x => x.GetMessages(now, It.IsAny<Action<IEnumerable<string>, DateTime>>()));
             }
 
             [Fact]
-            void will_send_any_new_messages()
+            void will_request_new_messages_from_the_chat_room()
             {
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.GetSince(It.IsAny<DateTime>())).Returns(new string[] { "theFirstMessage", "theSecondMessage" } );
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo);
-
-                controller.GetMessagesAsync(new GetMessagesRequest());
-
-                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
-                Assert.Equal("theFirstMessage", ((IEnumerable<string>)controller.AsyncManager.Parameters["messages"]).First());
-                Assert.Equal("theSecondMessage", ((IEnumerable<string>)controller.AsyncManager.Parameters["messages"]).Skip(1).First());
-            }
-
-            [Fact]
-            void will_send_the_new_since_date()
-            {
-                var newSince = DateTime.UtcNow;
-                var moqDateTimeSvc = new Mock<IDateTimeSvc>();
-                moqDateTimeSvc.Setup(x => x.GetCurrentDateTimeAsUtc()).Returns(newSince);
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.GetSince(It.IsAny<DateTime>())).Returns(new string[] { "theFirstMessage", "theSecondMessage" });
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqDateTimeSvc: moqDateTimeSvc);
-
-                controller.GetMessagesAsync(new GetMessagesRequest());
-
-                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
-                Assert.Equal(newSince, controller.AsyncManager.Parameters["since"]);
-            }
-
-            [Fact]
-            void will_enqueue_a_callback_to_wait_for_new_messages_when_there_are_none_currently()
-            {
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.GetSince(It.IsAny<DateTime>())).Returns(new string[] { });
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
+                var moqChatRoom = new Mock<IChatRoom>();
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
 
                 controller.GetMessagesAsync(new GetMessagesRequest());
 
                 Assert.Equal(1, controller.AsyncManager.OutstandingOperations.Count);
-                moqCallbackQueue.Verify(x => x.Enqueue(It.IsAny<Action<IEnumerable<string>, DateTime>>()));
-            }
-
-            [Fact]
-            void will_send_new_messages_when_the_callback_is_called()
-            {
-                Action<IEnumerable<string>, DateTime> callback = null;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.GetSince(It.IsAny<DateTime>())).Returns(new string[] { });
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                moqCallbackQueue.Setup(x => x.Enqueue(It.IsAny<Action<IEnumerable<string>, DateTime>>())).Callback<Action<IEnumerable<string>, DateTime>>(x => callback = x);
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
-                controller.GetMessagesAsync(new GetMessagesRequest());
-
-                callback(new[] { "theFirstMessage" }, DateTime.UtcNow);
-
-                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
-                Assert.Equal("theFirstMessage", ((IEnumerable<string>)controller.AsyncManager.Parameters["messages"]).First());
-            }
-
-            [Fact]
-            void will_send_the_new_since_date_when_the_callback_is_called()
-            {
-                var newSince = DateTime.UtcNow;
-                Action<IEnumerable<string>, DateTime> callback = null;
-                var moqMessagesRepo = new Mock<IMessageRepo>();
-                moqMessagesRepo.Setup(x => x.GetSince(It.IsAny<DateTime>())).Returns(new string[] { });
-                var moqCallbackQueue = new Mock<ICallbackQueue>();
-                moqCallbackQueue.Setup(x => x.Enqueue(It.IsAny<Action<IEnumerable<string>, DateTime>>())).Callback<Action<IEnumerable<string>, DateTime>>(x => callback = x);
-                var controller = CreateControllerWithMoqs(moqMessageRepo: moqMessagesRepo, moqCallbackQueue: moqCallbackQueue);
-                controller.GetMessagesAsync(new GetMessagesRequest());
-
-                callback(new[] { "theFirstMessage" }, newSince);
-
-                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
-                Assert.Equal(newSince, controller.AsyncManager.Parameters["since"]);
+                moqChatRoom.Verify(x => x.GetMessages(It.IsAny<DateTime>(), It.IsAny<Action<IEnumerable<string>, DateTime>>()));
             } 
         }
 
@@ -377,7 +242,7 @@ namespace MvcAsyncChat
             }
 
             [Fact]
-            void will_send_the_new_since_date()
+            void will_send_the_new_since_timestamp()
             {
                 var since = DateTime.UtcNow;
                 var controller = CreateControllerWithMoqs();
@@ -399,11 +264,46 @@ namespace MvcAsyncChat
             }
         }
 
+        public class The_get_messages_callback
+        {
+            [Fact]
+            void will_send_new_messages_when_the_callback_is_called()
+            {
+                Action<IEnumerable<string>, DateTime> callback = null;
+                var moqChatRoom = new Mock<IChatRoom>();
+                moqChatRoom.Setup(x => x.GetMessages(It.IsAny<DateTime>(), It.IsAny<Action<IEnumerable<string>, DateTime>>()))
+                    .Callback<DateTime, Action<IEnumerable<string>, DateTime>>((x, y) => { callback = y; });
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
+                controller.GetMessagesAsync(new GetMessagesRequest());
+
+                callback(new[] { "theFirstMessage" }, DateTime.UtcNow);
+
+                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
+                Assert.Equal("theFirstMessage", ((IEnumerable<string>)controller.AsyncManager.Parameters["messages"]).First());
+            }
+
+            [Fact]
+            void will_send_the_new_since_timestamp_when_the_callback_is_called()
+            {
+                var now = DateTime.UtcNow;
+                Action<IEnumerable<string>, DateTime> callback = null;
+                var moqChatRoom = new Mock<IChatRoom>();
+                moqChatRoom.Setup(x => x.GetMessages(It.IsAny<DateTime>(), It.IsAny<Action<IEnumerable<string>, DateTime>>()))
+                    .Callback<DateTime, Action<IEnumerable<string>, DateTime>>((x, y) => { callback = y; });
+                var controller = CreateControllerWithMoqs(moqChatRoom: moqChatRoom);
+                controller.GetMessagesAsync(new GetMessagesRequest());
+
+                callback(new[] { "theFirstMessage" }, now);
+
+                Assert.Equal(0, controller.AsyncManager.OutstandingOperations.Count);
+                Assert.Equal(now, controller.AsyncManager.Parameters["since"]);
+            }
+        }
+
         static ChatController CreateControllerWithMoqs(
             Mock<IIdentity> moqIdentity = null,
             Mock<IAuthSvc> moqAuthSvc = null,
-            Mock<IMessageRepo> moqMessageRepo = null,
-            Mock<ICallbackQueue> moqCallbackQueue = null,
+            Mock<IChatRoom> moqChatRoom = null,
             Mock<IDateTimeSvc> moqDateTimeSvc = null)
         {
             if (moqIdentity == null)
@@ -418,8 +318,7 @@ namespace MvcAsyncChat
             moqHttpContext.Setup(x => x.User).Returns(moqPrincipal.Object);
             
             moqAuthSvc = moqAuthSvc ?? new Mock<IAuthSvc>();
-            moqMessageRepo = moqMessageRepo ?? new Mock<IMessageRepo>();
-            moqCallbackQueue = moqCallbackQueue ?? new Mock<ICallbackQueue>();
+            moqChatRoom = moqChatRoom ?? new Mock<IChatRoom>();
 
             if (moqDateTimeSvc == null)
             {
@@ -431,8 +330,7 @@ namespace MvcAsyncChat
             moqControllerContext.Setup(x => x.HttpContext).Returns(moqHttpContext.Object);
             var controller = new ChatController(
                 authSvc: moqAuthSvc.Object, 
-                messageRepo: moqMessageRepo.Object, 
-                callbackQueue: moqCallbackQueue.Object,
+                chatRoom: moqChatRoom.Object,
                 dateTimeSvc: moqDateTimeSvc.Object);
 
             controller.ControllerContext = moqControllerContext.Object;

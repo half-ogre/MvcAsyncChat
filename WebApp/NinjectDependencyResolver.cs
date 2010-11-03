@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Web.Mvc;
 using Ninject;
-using MvcAsyncChat.Svcs;
 using MvcAsyncChat.Domain;
+using MvcAsyncChat.Svcs;
 
 namespace MvcAsyncChat
 {
@@ -18,6 +18,7 @@ namespace MvcAsyncChat
             kernel.Bind<ICallbackQueue>().To<CallbackQueue>().InSingletonScope();
             kernel.Bind<IDateTimeSvc>().To<DateTimeSvc>();
             kernel.Bind<ITimerSvc>().To<TimerSvc>().InSingletonScope();
+            kernel.Bind<IChatRoom>().To<ChatRoom>().InSingletonScope();
             kernel.Bind<IControllerActivator>().To<NinjectControllerActivator>();
         }
 
